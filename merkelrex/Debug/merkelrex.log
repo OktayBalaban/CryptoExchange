@@ -1,0 +1,14 @@
+﻿  CSVReader.cpp
+C:\Users\oktay\source\repos\merkelrex\merkelrex\CSVReader.cpp(25,42): warning C4101: 'e': yerel değişken başvurusu kaldırıldı
+C:\Users\oktay\source\repos\merkelrex\merkelrex\CSVReader.cpp(68,34): warning C4101: 'e': yerel değişken başvurusu kaldırıldı
+C:\Users\oktay\source\repos\merkelrex\merkelrex\CSVReader.cpp(95,34): warning C4101: 'e': yerel değişken başvurusu kaldırıldı
+  main.cpp
+  MerkelMain.cpp
+C:\Users\oktay\source\repos\merkelrex\merkelrex\MerkelMain.cpp(99,38): warning C4101: 'e': yerel değişken başvurusu kaldırıldı
+C:\Users\oktay\source\repos\merkelrex\merkelrex\MerkelMain.cpp(137,38): warning C4101: 'e': yerel değişken başvurusu kaldırıldı
+C:\Users\oktay\source\repos\merkelrex\merkelrex\MerkelMain.cpp(181,34): warning C4101: 'e': yerel değişken başvurusu kaldırıldı
+  OrderBook.cpp
+  OrderBookEntry.cpp
+  Wallet.cpp
+  Kod Üretiliyor...
+  merkelrex.vcxproj -> C:\Users\oktay\source\repos\merkelrex\Debug\merkelrex.exe
