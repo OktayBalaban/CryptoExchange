@@ -154,7 +154,6 @@
     <ClInclude Include="Wallet.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="20200317.csv" />
     <None Include="20200601.csv" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

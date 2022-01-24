@@ -24,18 +24,28 @@ private:
     int getUserOption();
     void processUserOption(int userOption);
 
-    void manageAdvisorBot(); //Function to initiate and manage the Advisor Bot
+	std::string currentTime;
 
-			//Processing function for user Inputs
+	OrderBook orderBook{ "20200601.csv" };
+	Wallet wallet;
+
+
+	//FUNCTIONS I HAVE WRITTEN
+
+	//Function to initiate and manage the Advisor Bot
+    void manageAdvisorBot(); 
+
+	//Processing function for user Inputs
 	void inputProcess(std::string input);
 
-	//Funtion to tokenise user input in order to process the input
+	//Function to tokenise user input in order to process the input
 	std::vector<std::string> inputTokeniser(std::string inputString);
-
-	void userInput(std::string input);
 
 	//Lists all available commands
 	void helpCommand();
+
+	//Prints the function of a command and how to use it
+	void helpcmdCommand(std::vector<std::string> input);
 
 	//Lists all available products
 	void prodCommand();
@@ -55,14 +65,11 @@ private:
 	//Prompts the current timestep
 	void timeCommand();
 
-	//Moves to the next time step and prompts it
+	//Moves to the next time step, makes the exchanges and prompts it
 	void stepCommand();
 
+	//Calculates how much the bid or ask price changed from since a given step input (e.g 5 steps earlier) until the current time
 	void changeCommand(std::vector<std::string> input);
 
-    std::string currentTime;
-
-    OrderBook orderBook{"20200317.csv"};
-    Wallet wallet;
 
 };

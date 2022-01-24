@@ -55,8 +55,5 @@
     <None Include="20200601.csv">
       <Filter>Kaynak Dosyalar</Filter>
     </None>
-    <None Include="20200317.csv">
-      <Filter>Kaynak Dosyalar</Filter>
-    </None>
   </ItemGroup>
 </Project>

@@ -193,9 +193,12 @@ int MerkelMain::getUserOption()
         // 
     }
     std::cout << "You chose: " << userOption << std::endl;
+
+
     return userOption;
 }
 
+//Processes the input from the user.
 void MerkelMain::processUserOption(int userOption)
 {
     if (userOption == 0) // bad input
@@ -241,10 +244,20 @@ void MerkelMain::manageAdvisorBot()
     std::cout << "Vader: What is thy bidding, my master?" << std::endl;
 
 
-
+	//The bot runs infinitly until an escape entry is entered by the user, which will break the loop and exit the advisor bot mode.
     while (true)
     {
+		std::cout << "User: ";
         std::getline(std::cin, userEntry);
+
+		//Checks if there is no input to handle a possible error
+		while (userEntry == "")
+		{
+			std::cout << "Vader: I find your lack of input disturbing." << std::endl;
+			std::cout << "User: ";
+			std::getline(std::cin, userEntry);
+			
+		}
 
         //If the user enters the escape entry, then the bot stops
         if (userEntry == escapeEntry)
@@ -253,27 +266,25 @@ void MerkelMain::manageAdvisorBot()
             break;
         }
 
-        userInput(userEntry);
+		//Processes the user input
+        inputProcess(userEntry);
     }
 }
 
 
-//Main function to run the advisor bot
-void MerkelMain::userInput(std::string input)
-{
-	inputProcess(input);
-
-}
-
-
-//Funtion to tokenise user input in order to process the input
+//Function to tokenise user input in order to process the input
 std::vector<std::string> MerkelMain::inputTokeniser(std::string inputString)
 {
-	std::vector<std::string> tokenisedInput;
+	//Vector of strings is created, which will be returned
+	std::vector<std::string> tokenisedInput; 
+	
 	signed int start, end;
 	std::string token;
-
 	start = inputString.find_first_not_of(' ', 0);
+	
+	//The algorithm is very identical to tokenise algorithm from CSVReader, with the difference of seperator
+	
+	//Tokenises the input word by word, then pushes them into the vector of strings
 	do {
 		end = inputString.find_first_of(' ', start);
 		if (start == inputString.length() || start == end) break;
@@ -283,6 +294,7 @@ std::vector<std::string> MerkelMain::inputTokeniser(std::string inputString)
 		start = end + 1;
 	} while (end > 0);
 
+	//Returns the vector of strings
 	return tokenisedInput;
 }
 
@@ -292,11 +304,23 @@ void MerkelMain::inputProcess(std::string input)
 {
 	std::vector<std::string> tokenisedUserInput = inputTokeniser(input);
 
-
-
 	if (tokenisedUserInput[0] == "help")
 	{
-		helpCommand();
+		if (tokenisedUserInput.size() == 1) //If the input size equals to 1, than run help command
+		{
+			helpCommand();
+		}
+
+		else if (tokenisedUserInput.size() == 2) //If the input size equals to 2, than run helpcmd command
+		{
+			helpcmdCommand(tokenisedUserInput);
+		}
+
+		else
+		{
+			std::cout << "Vader: Your lack of valid input disturbing me!" << std::endl; //If the input is invalid due to size, will ask a new input
+		}
+
 	}
 
 	else if (tokenisedUserInput[0] == "prod" && tokenisedUserInput.size() == 1)
@@ -369,6 +393,7 @@ void MerkelMain::inputProcess(std::string input)
 
 	else
 	{
+		//Invalid Input, returns with an error message.
 		std::cout << "Vader: There is no '" << input << "'. You have failed me again with another invalid input" << std::endl;
 	}
 
@@ -381,6 +406,82 @@ void MerkelMain::inputProcess(std::string input)
 void MerkelMain::helpCommand()
 {
 	std::cout << "Vader: You have only begun to discover your power. Join me and I will complete your training." << std::endl;
+	std::cout << "       The available commands are: " << std::endl;
+	std::cout << "       help, help <cmd>, prod, max, min, avg, predict, time, step, change " << std::endl;
+	std::cout << "       You can also learn how to use commands by writing help <cmd>, where <cmd> is the name of the command you want to seek help about. " << std::endl;
+}
+
+//Runs the help command, called by writing "help <cmd>" in advisor bot mode. <cmd> is for the name of the command
+//Prints the function of a command and how to use it
+void MerkelMain::helpcmdCommand(std::vector<std::string> input)
+{
+	//Input[1] is for the name of the command that is asked for help by the user
+
+	if (input[1] == "help")
+	{
+		std::cout << "Vader: Search your feelings, you know the second word to be something else than 'help'" << std::endl;
+	}
+
+	else if (input[1] == "prod")
+	{
+		std::cout << "Vader: 'prod' command lists all available products." << std::endl;
+		std::cout << "       In order to use this power, simply write 'prod'." << std::endl;
+	}
+
+	else if (input[1] == "min")
+	{
+		std::cout << "Vader: 'min' command finds the minimum bid or ask for product in current time step." << std::endl;
+		std::cout << "       In order to use this power write 'min <product name> <orderType>." << std::endl;
+		std::cout << "       For example 'min ETH/BTC bid'." << std::endl;
+	}
+
+	else if (input[1] == "max")
+	{
+		std::cout << "Vader: 'max' command finds the maximum bid or ask for product in current time step." << std::endl;
+		std::cout << "       In order to use this power, write 'max <product name> <orderType>." << std::endl;
+		std::cout << "       For example 'max ETH/BTC bid'." << std::endl;
+	}
+
+	else if (input[1] == "avg")
+	{
+		std::cout << "Vader: 'avg' command computes average ask or bid for the sent product over the sent number of time steps." << std::endl;
+		std::cout << "       Also, if the input step is higher than the total time steps that have been past, average is calculated from the first time step." << std::endl;
+		std::cout << "       In order to use this power, write 'avg <product name> <orderType> <time step>." << std::endl;
+		std::cout << "       For example 'avg ETH/BTC bid 10'." << std::endl;
+
+	}
+
+	else if (input[1] == "predict")
+	{
+		std::cout << "Vader: 'predict' command computes the predicition for the max/min ask/bid price for a given product at the next time step." << std::endl;
+		std::cout << "       In order to use this power, write 'predict <max or min> <product name> <orderType> ." << std::endl;
+		std::cout << "       For example 'predict max ETH/BTC bid'." << std::endl;
+	}
+
+	else if (input[1] == "time")
+	{
+		std::cout << "Vader: 'time' command prompts the current time step." << std::endl;
+		std::cout << "       In order to use this power, simply write 'time'." << std::endl;
+	}
+
+	else if (input[1] == "step")
+	{
+		std::cout << "Vader: 'step' command moves to the next time step, makes the exchanges and prompts it." << std::endl;
+		std::cout << "       In order to use this power, simply write 'step'." << std::endl;
+	}
+
+	else if (input[1] == "change")
+	{
+		std::cout << "Vader: 'change' command calculates how much the bid or ask price changed from since a given step input (e.g 5 steps earlier) until the current time." << std::endl;
+		std::cout << "       Also, if the input step is higher than the total time steps that have been past, change is calculated from the first time step." << std::endl;
+		std::cout << "       In order to use this power, write 'change <product name> <orderType> <time step> ." << std::endl;
+		std::cout << "       For example 'change ETH/BTC bid 10'." << std::endl;
+	}
+
+	else
+	{
+		std::cout << "Vader: There is no command such as'" << input[1] << "'." << std::endl;
+	}
 }
 
 //Runs the prod command, called by writing "prod" in advisor bot mode
@@ -415,16 +516,15 @@ void MerkelMain::minCommand(std::vector<std::string> input)
 			productValidity++;
 		}
 	}
-
-	//If the product input is invalid, return with an error message
 	if (productValidity == 0)
 	{
+		//If the product input is invalid, return with an error message
 		std::cout << "Vader: There is no '" << input[1] << "'. You are unwise to search for an invalid product" << std::endl;
 		return;
 	}
 
 	//If the orderType input is invalid, return with an error message
-	if (input[2] != "ask" || input[2] != "bid")
+	if (input[2] != "ask" && input[2] != "bid")
 	{
 		std::cout << "Vader: There is no '" << input[2] << "'. Search your feelings, you know it to be either 'ask' or 'bid'" << std::endl;
 		return;
@@ -455,16 +555,15 @@ void MerkelMain::maxCommand(std::vector<std::string> input)
 			productValidity++;
 		}
 	}
-
-	//If the product input is invalid, return with an error message
 	if (productValidity == 0)
 	{
+		//If the product input is invalid, return with an error message
 		std::cout << "Vader: There is no '" << input[1] << "'. You are unwise to search for an invalid product" << std::endl;
 		return;
 	}
 
 	//If the orderType input is invalid, return with an error message
-	if (input[2] != "ask" || input[2] != "bid")
+	if (input[2] != "ask" && input[2] != "bid")
 	{
 		std::cout << "Vader: There is no '" << input[2] << "'. Search your feelings, you know it to be either 'ask' or 'bid'" << std::endl;
 		return;
@@ -481,11 +580,12 @@ void MerkelMain::maxCommand(std::vector<std::string> input)
 
 //Runs the max command, called by writing "max" in advisor bot mode
 //Computes average ask or bid for the sent product over the sent number of time steps.
+//If step is bigger than the past steps, give the results from the first timestamp
 void MerkelMain::avgCommand(std::vector<std::string> input)
 {
 	//will use these for dealing with bad inputs
 	int productValidity = 0;
-	int pastTimeNumber = orderBook.checkPastTimes(currentTime);
+	int pastTimeNumber = orderBook.getPastTimes(currentTime);
 
 
 	int digitizedInput;
@@ -520,10 +620,9 @@ void MerkelMain::avgCommand(std::vector<std::string> input)
 			productValidity++;
 		}
 	}
-
-	//If the product input is invalid, return with an error message
 	if (productValidity == 0)
 	{
+		//If the product input is invalid, return with an error message
 		std::cout << "Vader: There is no '" << input[1] << "'. You are unwise to search for an invalid product" << std::endl;
 		return;
 	}
@@ -531,7 +630,6 @@ void MerkelMain::avgCommand(std::vector<std::string> input)
 	//If the orderType input is invalid, return with an error message
 	if (input[2] != "ask" && input[2] != "bid")
 	{
-		std::cout << input[2].size() << std::endl;
 		std::cout << "Vader: There is no '" << input[2] << "'. Search your feelings, you know it to be either 'ask' or 'bid'" << std::endl;
 		return;
 	}
@@ -541,15 +639,24 @@ void MerkelMain::avgCommand(std::vector<std::string> input)
 	{
 		std::cout << "Vader: The validity of your input is strong. But there is no '" << input[3] << "' past steps yet." << std::endl;
 		std::cout << "       Now, I will show you the average price since the first time step" << std::endl;
-		digitizedInput = pastTimeNumber - 1;
+
+		//Alters the digitized input so that the avg will be calcualted since the beginning of the order book
+		digitizedInput = pastTimeNumber - 1;  
 	}
 
 	std::vector<std::string> timestampsVector = orderBook.getVectorOfPreviousSteps(digitizedInput, currentTime);
 
 	average = orderBook.calculateAveragePrice(timestampsVector, input[1], input[2]);
 
-	std::cout << average << std::endl;
-
+	//If there is not enough previous timesteps, the advisor bot comment differs slightly
+	if (digitizedInput >= pastTimeNumber)
+	{
+		std::cout << "Vader: The average " << input[2] << " price for " << input[1] << " since the beginning of the order book is " << average << std::endl;
+	}
+		else
+	{
+		std::cout << "Vader: The average " << input[2] << " price for " << input[1] << " over the last " << input[3] << " time steps is " << average << std::endl;
+	}
 }
 
 
@@ -558,7 +665,7 @@ void MerkelMain::avgCommand(std::vector<std::string> input)
 //Computes the predicition for the max/min ask/bid price for a given product at the next timestep
 void MerkelMain::predictCommand(std::vector<std::string> input)
 {
-	currentTime = "2020/03/17 17:02:00.124758";
+
 	double EMA; //Exponential Moving Average
 	double avgPriceDifference; //The average difference from the average prices
 
@@ -584,7 +691,6 @@ void MerkelMain::predictCommand(std::vector<std::string> input)
 	//If the orderType input is invalid, return with an error message
 	if (input[3] != "ask" && input[3] != "bid")
 	{
-		std::cout << input[2].size() << std::endl;
 		std::cout << "Vader: There is no '" << input[3] << "'. Search your feelings, you know it to be either 'ask' or 'bid'" << std::endl;
 		return;
 	}
@@ -613,33 +719,35 @@ void MerkelMain::timeCommand()
 
 
 //Runs the step command, called by writing "step" in advisor bot mode
-//Moves to the next time step using gotoNextTimeFrame()
+//Moves to the next time step, makes the exchanges and prompts it
 void MerkelMain::stepCommand()
 {
-	std::cout << "Vader: It is your destiny. Join me, and together we can move to the next time step : " << currentTime << std::endl;
 	gotoNextTimeframe();
+	std::cout << "Vader: It is your destiny. Join me, and together we can move to the next time step : " << currentTime << std::endl;
+
 }
 
 //Runs the change command, called by writing "step" in advisor bot mode.
-//Prints how much a product price is changed since a given input or in maximum time steps
+//Calculates how much the bid or ask price changed from since a given step input (e.g 5 steps earlier) until the current time.
+//If step is bigger than the past steps, give the results from the first timestamp
 void MerkelMain::changeCommand(std::vector<std::string> input)
 {
 	//will use these for dealing with bad inputs
 	int productValidity = 0;
-	int pastTimeNumber = orderBook.checkPastTimes(currentTime);
-	std::string reference_step;
+	int pastTimeNumber = orderBook.getPastTimes(currentTime);
 
-
+	//The step input currently is a string.
+	//DigitizedInput variable will the step input as integer
 	int digitizedInput;
-	double change;
 
-	//converting string to a number
+	//Converting string 'step' input into int type and storing it in digitized input
 	try
 	{
 		digitizedInput = std::stoi(input[3]);
 	}
 	catch (const std::exception& e)
 	{
+		//If the step input is not a number, return with an error
 		std::cout << "Vader: From my point of view '." << input[3] << "' is not a number" << std::endl;
 		return;
 	}
@@ -662,10 +770,9 @@ void MerkelMain::changeCommand(std::vector<std::string> input)
 			productValidity++;
 		}
 	}
-
-	//If the product input is invalid, return with an error message
 	if (productValidity == 0)
 	{
+		//If the product input is invalid, return with an error message
 		std::cout << "Vader: There is no '" << input[1] << "'. You are unwise to search for an invalid product" << std::endl;
 		return;
 	}
@@ -673,7 +780,6 @@ void MerkelMain::changeCommand(std::vector<std::string> input)
 	//If the orderType input is invalid, return with an error message
 	if (input[2] != "ask" && input[2] != "bid")
 	{
-		std::cout << input[2].size() << std::endl;
 		std::cout << "Vader: There is no '" << input[2] << "'. Search your feelings, you know it to be either 'ask' or 'bid'" << std::endl;
 		return;
 	}
@@ -683,9 +789,12 @@ void MerkelMain::changeCommand(std::vector<std::string> input)
 	{
 		std::cout << "Vader: The validity of your input is strong. But there is no '" << input[3] << "' past steps yet." << std::endl;
 		std::cout << "       Now, I will show you the percentage change of "<< input[2] <<"s since the first time step" << std::endl;
+
+		//Alters the digitized input so that the avg will be calcualted since the beginning of the order book
 		digitizedInput = pastTimeNumber - 1;
 	}
 
+	//If the user entered something equals to zero or smaller, again it's not a valid input.
 	else if (digitizedInput <= 0)
 	{
 		std::cout << "Vader: No... '" << input[3] << "' is not a valid step input. Give me something bigger than zero" << std::endl;
@@ -693,20 +802,20 @@ void MerkelMain::changeCommand(std::vector<std::string> input)
 	}
 
 	std::string referenceTimestamp = orderBook.getReferencedPreviousTimestamp(digitizedInput, currentTime); //Gets the reference timestamp for 'x' timesteps before
-	change = orderBook.calculateChangePrice(digitizedInput, currentTime, input[1], input[2]); //Calculates the change
+	double change = orderBook.calculateChangePrice(digitizedInput, currentTime, input[1], input[2]); //Calculates the change
 
 
 	if (change == 0)
 	{
-		std::cout << "Vader: The price is not changed or have only changed insignificantly" << std::endl;
+		std::cout << "Vader: The price has not changed or have only changed insignificantly" << std::endl;
 		return;
 	}
 
-	else if (change == -1000000)
+	else if (change == -1000000.9898)
 	{
 		std::cout << "Vader: There have been no " << input[2] << " for" << input[1] << "until " << referenceTimestamp;
 		return;
 	}
 
-	std::cout << "The " << input[2] << " price for " << input[1] << " is changed by " << change << "%." << std::endl;
+	std::cout << "Vader: The " << input[2] << " price for " << input[1] << " is changed by " << change << "%." << std::endl;
 }

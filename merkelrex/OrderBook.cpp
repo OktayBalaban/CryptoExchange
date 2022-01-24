@@ -1,6 +1,5 @@
 #include "OrderBook.h"
 #include "CSVReader.h"
-#include <map>
 #include <algorithm>
 #include <iostream>
 
@@ -8,10 +7,14 @@
 /** construct, reading a csv data file */
 OrderBook::OrderBook(std::string filename)
 {
+    //Creating the orders vector
     orders = CSVReader::readCSV(filename);
+
+    //Map the orders vector by timestamps
+    mapOrdersByTimestamp();
 }
 
-/** return vector of all know products in the dataset*/
+/** return vector of all known products in the dataset*/
 std::vector<std::string> OrderBook::getKnownProducts()
 {
     std::vector<std::string> products;
@@ -38,11 +41,10 @@ std::vector<OrderBookEntry> OrderBook::getOrders(OrderBookType type,
     std::string timestamp)
 {
     std::vector<OrderBookEntry> orders_sub;
-    for (OrderBookEntry& e : orders)
+    for (OrderBookEntry& e : mappedOrders[timestamp])
     {
         if (e.orderType == type &&
-            e.product == product &&
-            e.timestamp == timestamp)
+            e.product == product)
         {
             orders_sub.push_back(e);
         }
@@ -96,6 +98,7 @@ std::string OrderBook::getNextTime(std::string timestamp)
     return next_timestamp;
 }
 
+//Similar to getNextTime, but returns "end" if the there is no more further time rather than looping
 std::string OrderBook::getNextTimeWithoutLoop(std::string timestamp)
 {
     std::string next_timestamp = "";
@@ -117,7 +120,7 @@ std::string OrderBook::getNextTimeWithoutLoop(std::string timestamp)
 
 
 //Checks how many previous (including the current) timestamps are available and returns the number
-int OrderBook::checkPastTimes(std::string timestamp)
+int OrderBook::getPastTimes(std::string timestamp)
 {
     int timeCounter = 0; 
     std::vector<std::string> timestamps;
@@ -334,6 +337,7 @@ double OrderBook::calculateMovingAverage(std::string timestamp, std::string prod
     return EMA;
 }
 
+//Predicts the next price according to the input by calculating from the first timestamp until the currentTime
 double OrderBook::predictPriceDifference(std::vector<std::string> timestamps, std::string product, std::string orderBooktype, std::string maxormin)
 {
     double tempPrice = 0;
@@ -458,16 +462,16 @@ double OrderBook::predictPriceDifference(std::vector<std::string> timestamps, st
 
 std::string OrderBook::getReferencedPreviousTimestamp(int step, std::string timestamp)
 {
-    int TotalTimesteps = checkPastTimes(timestamp); //Gets the number of total timestamps until the current time
+    //Gets the number of total timestamps until the current time
+    int TotalTimesteps = getPastTimes(timestamp); 
+
     int referenceStep = TotalTimesteps - step;
-
     int timeCounter = 0;
-    std::vector<std::string> timestamps; //Will be used to collect all timestamps equal to and lower than the input timestamp
-    
 
+    //Will be used to collect all timestamps equal to and lower than the input timestamp
+    std::vector<std::string> timestamps; 
     
     bool uniqueTimestamp = true;
-
 
     //Checks if the timestamp is lower than the input timestamp. Also checks if the timestamp appeared for the first time.
     for (OrderBookEntry& e : orders)
@@ -479,36 +483,39 @@ std::string OrderBook::getReferencedPreviousTimestamp(int step, std::string time
                 uniqueTimestamp = false;
             }
         }
-
         if (uniqueTimestamp)
         {
             timeCounter++;
             timestamps.push_back(e.timestamp);
         }
-
         if (timeCounter == referenceStep)
         {
             break;
         }
-
         uniqueTimestamp = true;
     }
-
-
     return timestamps[referenceStep - 1];
 }
 
 //Calculates the change in price as percentage between an input of previous timesteps and the current time
 double OrderBook::calculateChangePrice(int step, std::string currentTime, std::string product, std::string orderBooktype)
 {
+    //The timestamp of the previous time step
     std::string referenceTimestamp = getReferencedPreviousTimestamp(step, currentTime);
+
+    //The current timestamp
     std::string currentTimestamp = currentTime;
+
+    //Calculates the average price of the previous time step
     double referenceAvgPrice = calculateOneAveragePrice(referenceTimestamp, product, orderBooktype);
 
+    //These are used for NaN price errors. referenceTimestamp will be updated, so for better feedback from advisor bot comes with the original one.
     int stepChecker = step;
     int refStepUpdated = step;
-    std::string originalReferenceTimestamp = referenceTimestamp; //Used for NaN price errors. referenceTimestamp will be updated, so for better feedback from advisor bot comes with the original one.
+    std::string originalReferenceTimestamp = referenceTimestamp; 
 
+    //If there is no price for the indicated previous step, then 1 earlier time step will be checked, until a price is found or no previous time step left.
+    //If step checker reaches to zero, then all the previous time steps have been checked but no price has been found
     while (std::isnan(referenceAvgPrice) && stepChecker != 0)
     {
         refStepUpdated++;
@@ -517,16 +524,24 @@ double OrderBook::calculateChangePrice(int step, std::string currentTime, std::s
         stepChecker--;
     }
 
+    //If no price has been found, then it means, until the indicated timestamp, no bids or asked happened.
     if (stepChecker == 0)
     {
         std::cout << "Vader: There is no " << orderBooktype << " for " << product << " until " << originalReferenceTimestamp << "." << std::endl;
-        return -1000000;  //Returns a dummy number, will process it in MerkelMain. No bid or ask happened until the referenceTime since the beginning of the orderBook. Price Change cannot be determined.
+
+        //Returns a dummy number, will process it in MerkelMain. No bid or ask happened until the referenceTime since the beginning of the orderBook. Price Change cannot be determined.
+        return -1000000.9898;  
     }
 
-
+    //Calculates the average price of the current time step
     double currentAvgPrice = calculateOneAveragePrice(currentTime, product, orderBooktype);
 
-    stepChecker = checkPastTimes(currentTime) - (checkPastTimes(currentTime) - refStepUpdated); //Will check until the updated reference step if no bid or ask happened since.
+    //The similar checks which have been made for previous time step will be applied to the current time step
+    //The difference is, the price will be checked until the previous time step. 
+    //If there is a price for previous time step, but no bids or asks happened, then it can be assumed that th eprice is not changed. 
+
+    //Will check until the updated reference step if no bid or ask happened since.
+    stepChecker = getPastTimes(currentTime) - (getPastTimes(currentTime) - refStepUpdated); 
     int curStepUpdated = 0;
 
     while (std::isnan(currentAvgPrice) && stepChecker != 0)
@@ -534,7 +549,8 @@ double OrderBook::calculateChangePrice(int step, std::string currentTime, std::s
         stepChecker--;
         if (stepChecker == 0)
         {
-            return 0; //Returns zero as there was a bid or ask since referenceTime but no more until the current time. The price is not changed since as there was no more ask or bid.
+            //Returns zero as there was a bid or ask since referenceTime but no more until the current time. The price is not changed since as there was no more ask or bid.
+            return 0; 
         }
 
         curStepUpdated++;
@@ -547,19 +563,15 @@ double OrderBook::calculateChangePrice(int step, std::string currentTime, std::s
     change = std::round(change);
     change = change / 100;
 
-
-    if ( (std::isnan(change)) ) //If orderBook is in the end, the step is also the maximum and there happened no bid or ask, the previous check for stepChecker != 0 becomes true while change will be NaN. This checks for it.
+    //If orderBook is in the end, the step is also the maximum and there happened no bid or ask, the previous check for stepChecker != 0 becomes true while change will be NaN. This checks for it.
+    if ( (std::isnan(change)) ) 
     {
         return 0; //Returns zero as there was a bid or ask since referenceTime but no more until the current time. The price is not changed since as there was no more ask or bid.
     }
 
-
     return change;
 
 }
-
-
-
 
 
 void OrderBook::insertOrder(OrderBookEntry& order)
@@ -567,6 +579,63 @@ void OrderBook::insertOrder(OrderBookEntry& order)
     orders.push_back(order);
     std::sort(orders.begin(), orders.end(), OrderBookEntry::compareByTimestamp);
 }
+
+/** return vector of all known products in the dataset*/
+std::vector<std::string> OrderBook::getKnownTimestamps()
+{
+    std::vector<std::string> timestamps;
+
+    std::map<std::string, bool> timeMap;
+
+    for (OrderBookEntry& e : orders)
+    {
+        timeMap[e.timestamp] = true;
+    }
+
+    // now flatten the map to a vector of strings
+    for (auto const& e : timeMap)
+    {
+        timestamps.push_back(e.first);
+    }
+
+    return timestamps;
+}
+
+void OrderBook::mapOrdersByTimestamp()
+{
+
+    //Temporary vector that will be mapped to a key timestamp
+    std::vector<OrderBookEntry> tempOrders;
+
+    //Getting the vector of all timestamps in the order book
+    std::vector<std::string> timestamps = getKnownTimestamps();
+    std::vector<std::string> products = getKnownProducts();
+
+
+
+    for (OrderBookEntry& e : orders)
+    {
+        if (mappedOrders.find(e.timestamp) == mappedOrders.end())
+        {
+            //Inserting the empty vector tempOrders into the map
+            mappedOrders[e.timestamp] = tempOrders;
+
+            //Inserting the Order Book Entry into the newly created vector
+            mappedOrders[e.timestamp].push_back(e);
+            
+            //Clearing the tempOrders Vector so it will be empty for the next timestamp
+            tempOrders.clear();
+        }
+        else
+        {
+            //Inserting the Order Book Entry into the vector
+            mappedOrders[e.timestamp].push_back(e);
+        }
+
+    }
+}
+
+
 
 std::vector<OrderBookEntry> OrderBook::matchAsksToBids(std::string product, std::string timestamp)
 {
@@ -581,6 +650,8 @@ std::vector<OrderBookEntry> OrderBook::matchAsksToBids(std::string product, std:
 
     // sales = []
     std::vector<OrderBookEntry> sales;
+
+    //Converting vectors of rawAsks and rawBids into maps by timestamp keys
 
     // I put in a little check to ensure we have bids and asks
     // to process.
